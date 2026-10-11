@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>TransSum | Transformer Text Summarization & Evaluation</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div class="app-layout">
+    <!-- Header -->
+    <header class="navbar">
+      <div class="nav-brand">
+        <div class="logo-icon">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+            <polyline points="14 2 14 8 20 8"></polyline>
+            <line x1="16" y1="13" x2="8" y2="13"></line>
+            <line x1="16" y1="17" x2="8" y2="17"></line>
+            <polyline points="10 9 9 9 8 9"></polyline>
+          </svg>
+        </div>
+        <div>
+          <h1 class="brand-title">TransSum</h1>
+          <p class="brand-subtitle">Transformer Summarization & ROUGE Evaluation Studio</p>
+        </div>
+      </div>
+      <div class="nav-actions">
+        <span class="badge badge-purple">BART &bull; T5</span>
+        <span class="badge badge-cyan">TextRank Extractive</span>
+        <span class="badge badge-emerald">ROUGE-1, 2, L</span>
+      </div>
+    </header>
+
+    <!-- Main Container -->
+    <main class="main-content">
+      <!-- Benchmark Presets Bar -->
+      <section class="preset-section card">
+        <div class="preset-header">
+          <span class="section-label">Dataset Benchmarks (CNN/Daily Mail &amp; News)</span>
+          <span class="helper-text">Select a pre-loaded article to test instantly with gold-standard references</span>
+        </div>
+        <div class="preset-chips" id="presetChips">
+          <button class="chip active" data-sample="0">CNN/DM: NASA James Webb</button>
+          <button class="chip" data-sample="1">CNN/DM: UN Climate Summit</button>
+          <button class="chip" data-sample="2">News: Solid-State Battery</button>
+          <button class="chip" data-sample="3">CNN/DM: AI Safety Forum</button>
+          <button class="chip" data-sample="4">News: Deep Sea Discovery</button>
+        </div>
+      </section>
+
+      <!-- Workspace Grid -->
+      <div class="workspace-grid">
+        <!-- Left Column: Input and Parameters -->
+        <div class="input-panel card">
+          <div class="panel-header">
+            <h2>Source Document</h2>
+            <div class="stats-counter" id="docStats">0 words &bull; 0 chars</div>
+          </div>
+
+          <div class="form-group">
+            <textarea id="inputText" placeholder="Paste long article or text document here..." rows="12"></textarea>
+          </div>
+
+          <div class="form-group">
+            <div class="flex-between">
+              <label for="referenceText" class="form-label">Reference Summary (Optional for ROUGE Evaluation)</label>
+              <span class="helper-text-sm" id="refStats">0 words</span>
+            </div>
+            <textarea id="referenceText" placeholder="Paste gold-standard reference summary here to compute ROUGE-1, ROUGE-2, and ROUGE-L metrics..." rows="4"></textarea>
+          </div>
+
+          <!-- Configuration Controls -->
+          <div class="controls-grid">
+            <div class="control-card">
+              <label class="control-title">Abstractive Model</label>
+              <select id="modelChoice" class="custom-select">
+                <option value="both" selected>Both (BART &amp; T5-Small)</option>
+                <option value="bart">BART (DistilBART-CNN-12-6)</option>
+                <option value="t5">Google T5-Small</option>
+              </select>
+            </div>
+
+            <div class="control-card">
+              <label class="control-title">Extractive Method</label>
+              <select id="extractiveMethod" class="custom-select">
+                <option value="both" selected>Both (TextRank &amp; Lead-3)</option>
+                <option value="textrank">TextRank (Graph-based)</option>
+                <option value="lead_k">Lead-3 (Baseline)</option>
+              </select>
+            </div>
+
+            <div class="control-card">
+              <label class="control-title">Summary Length Limit</label>
+              <div class="range-wrapper">
+                <input type="range" id="maxLengthSlider" min="50" max="250" value="142" step="5">
+                <span id="maxLengthVal" class="range-val">142 tokens</span>
+              </div>
+            </div>
+
+            <div class="control-card">
+              <label class="control-title">Extractive Sentences</label>
+              <div class="range-wrapper">
+                <input type="range" id="sentenceSlider" min="1" max="6" value="3" step="1">
+                <span id="sentenceVal" class="range-val">3 sentences</span>
+              </div>
+            </div>
+          </div>
+
+          <button id="summarizeBtn" class="btn-primary">
+            <span class="btn-icon">⚡</span>
+            <span>Generate &amp; Compare Summaries</span>
+          </button>
+        </div>
+
+        <!-- Right Column: Outputs & Comparison -->
+        <div class="results-panel card">
+          <div class="panel-header">
+            <h2>Comparative Results</h2>
+            <div class="view-toggles" id="viewToggles">
+              <button class="toggle-btn active" data-view="cards">Side-by-Side</button>
+              <button class="toggle-btn" data-view="rouge">ROUGE Benchmark</button>
+            </div>
+          </div>
+
+          <!-- Empty State -->
+          <div class="empty-state" id="emptyState">
+            <div class="empty-icon">📊</div>
+            <h3>Ready for Analysis</h3>
+            <p>Click "Generate &amp; Compare Summaries" or select a benchmark preset to compare Extractive vs. Abstractive transformer models with ROUGE metrics.</p>
+          </div>
+
+          <!-- Loading Indicator -->
+          <div class="loading-state hidden" id="loadingState">
+            <div class="spinner"></div>
+            <p class="loading-text" id="loadingMsg">Running Transformer inference and sentence ranking...</p>
+          </div>
+
+          <!-- Summaries Display -->
+          <div class="summaries-container hidden" id="summariesContainer">
+            <!-- Dynamic comparison cards will be inserted here -->
+          </div>
+
+          <!-- ROUGE Metrics Section -->
+          <div class="rouge-section hidden" id="rougeSection">
+            <div class="rouge-header">
+              <h3>ROUGE Metric Evaluation (Precision &bull; Recall &bull; F1)</h3>
+              <p class="rouge-subtitle">Comparison against ground truth reference summary</p>
+            </div>
+            <div class="table-container">
+              <table class="rouge-table" id="rougeTable">
+                <thead>
+                  <tr>
+                    <th>Method</th>
+                    <th>Type</th>
+                    <th>ROUGE-1 F1</th>
+                    <th>ROUGE-2 F1</th>
+                    <th>ROUGE-L F1</th>
+                    <th>Recall (R1 / R2 / RL)</th>
+                    <th>Compression</th>
+                  </tr>
+                </thead>
+                <tbody id="rougeTableBody">
+                  <!-- Populated dynamically -->
+                </tbody>
+              </table>
+            </div>
+
+            <div class="metric-explainer card-sub">
+              <h4>Metric Interpretation Guide</h4>
+              <div class="explainer-grid">
+                <div>
+                  <strong>ROUGE-1:</strong> Overlap of unigrams (single words). Measures lexical coverage and informativeness.
+                </div>
+                <div>
+                  <strong>ROUGE-2:</strong> Overlap of bigrams (two-word sequences). Measures grammatical coherence and phrasing fidelity.
+                </div>
+                <div>
+                  <strong>ROUGE-L:</strong> Longest Common Subsequence (LCS). Evaluates sentence-level structure without requiring contiguous matches.
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </main>
+
+    <!-- Footer -->
+    <footer class="footer">
+      <div>TransSum Deep Learning System &bull; Pre-trained BART &amp; T5 with Hierarchical Map-Reduce for Long Documents</div>
+      <div class="footer-tags">
+        <span>CNN/Daily Mail Benchmark</span>
+        <span>TextRank Graph Algorithm</span>
+        <span>ROUGE-1 / ROUGE-2 / ROUGE-L</span>
+      </div>
+    </footer>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>
